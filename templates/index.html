@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PatentSafe Page Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+        }
+        .error {
+            background-color: #f2dede;
+            border: 1px solid #ebccd1;
+        }
+    </style>
+</head>
+<body>
+    <h1>PatentSafe Page Capture</h1>
+    <form id="captureForm">
+        <div class="form-group">
+            <label for="server">PatentSafe Server URL:</label>
+            <input type="text" id="server" name="server" required>
+        </div>
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="url">URL to Capture:</label>
+            <input type="text" id="url" name="url" required>
+        </div>
+        <button type="submit">Capture Page</button>
+    </form>
+    <div id="result" style="display: none;"></div>
+
+    <script>
+        // Load saved values when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const server = getCookie('patentsafe_server');
+            const username = getCookie('patentsafe_username');
+            
+            if (server) document.getElementById('server').value = server;
+            if (username) document.getElementById('username').value = username;
+        });
+
+        document.getElementById('captureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Save values to cookies
+            const server = document.getElementById('server').value;
+            const username = document.getElementById('username').value;
+            setCookie('patentsafe_server', server, 365); // Save for 1 year
+            setCookie('patentsafe_username', username, 365);
+            
+            const formData = new FormData(this);
+            const resultDiv = document.getElementById('result');
+            
+            fetch('/capture', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = data.message;
+                resultDiv.className = data.success ? 'success' : 'error';
+            })
+            .catch(error => {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = 'Error: ' + error;
+                resultDiv.className = 'error';
+            });
+        });
+
+        // Cookie helper functions
+        function setCookie(name, value, days) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + d.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+    </script>
+</body>
+</html> 
